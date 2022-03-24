@@ -80,7 +80,6 @@ class App extends Component {
         <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
           <a
             className="navbar-brand col-sm-3 col-md-2 mr-0"
-            href="https://blockstellart.com"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -130,7 +129,9 @@ class App extends Component {
                 <div key={key} className="col-md-3 mb-3">
                 <div className="token" 
                 style={{ backgroundColor: color }}></div>
-                      <div>{color}</div>
+                      <div>
+                        {color}
+                      </div>
                    </div>
                 )
             })}
