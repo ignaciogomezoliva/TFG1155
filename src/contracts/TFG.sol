@@ -10,6 +10,7 @@ contract TFG is ERC1155{
     uint256 public constant moneda = 0;
 
     //estructuras auxiliares
+    string [] public colors;
     mapping (string => bool) _colorExists;
 
     modifier onlyAdmin() {
@@ -26,10 +27,14 @@ contract TFG is ERC1155{
 
     function nuevoColor(string memory _color) public{
         require(!_colorExists[_color]);
-
+        colors.push(_color);
         bytes memory dataColor = bytes(_color);
-
+        
         _mint(msg.sender, count++, 1, dataColor);
         _colorExists[_color] = true;
+    }
+
+    function totalSupply() public view returns (uint256){
+        return count;
     }
 }
