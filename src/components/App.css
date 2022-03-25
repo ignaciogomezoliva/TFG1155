@@ -4,3 +4,22 @@
     border-radius: 50%;
     display: inline-block;
 }
+.token-little {
+    height: 30px;
+    width: 30px;
+    border-radius: 50%;
+    border-style:groove;
+    border-color: black;
+    display:flex;
+}
+
+#container{
+    overflow:hidden;
+    width:auto;
+    display:inline;
+}
+
+.abc{
+    float:right;
+    margin-left:10px;
+}
