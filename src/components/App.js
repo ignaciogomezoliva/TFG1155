@@ -71,7 +71,9 @@ class App extends Component {
       colors: [],
       colorsInPropery: [],
       funds: 0,
-      show: false
+      show: false,
+      errorMessage: '',
+      loading: false
     }
   }
 
@@ -100,11 +102,24 @@ class App extends Component {
     this.state.contract.methods.addFunds().send({ from: this.state.account })
   }
 
-  comprar = (color) => {
-    this.state.contract.methods.buy(color).send({ from: this.state.account })
-    .once('receipt', (receipt) => {
-      console.log("NFT transferido correctamente")
-    })
+  async comprar(color) {
+    var tokenId = -1;
+    for (var i = 0; i<this.state.totalSupply; i++){
+      if(this.state.colors[i] === color) tokenId = i;
+    }
+    try{
+      await this.state.contract.methods.buy(tokenId).send({ from: this.state.account })
+      .once('receipt', (receipt) => {
+        console.log("NFT transferido correctamente")
+      })
+
+    } catch(err){
+      this.setState({errorMessage: err.message})
+  } finally {
+      this.setState({loading:false})
+  }
+
+    
   }
 
 render() {

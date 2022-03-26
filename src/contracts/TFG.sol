@@ -33,6 +33,7 @@ contract TFG is ERC1155{
         _property[count] = msg.sender;
         bytes memory dataColor = bytes(_color);
         _mint(msg.sender, count, 1, dataColor);
+        //setApprove? 
         count++;
         _colorExists[_color] = true;
         
@@ -55,25 +56,10 @@ contract TFG is ERC1155{
     }
 
 
-    function buy(string memory color) public {
-        //primero necesito encontrar el id del token a comprar y su propietario
-        bool encontrado = false;
-        address to;
-        uint i = 1;
-        while (!encontrado && i<colors.length){
-            if (compareStrings(color, colors[i])) {
-                encontrado = true;
-                to = _property[i];
-            }
-        }
-        require(encontrado);
-
+    function buy(uint tokenId) public payable {
         //Ahora la transacción de las monedas
-        require(_price[i] >= balanceOf(msg.sender, 0));
-        safeTransferFrom(msg.sender, to, 1, _price[i], "");
-
-        safeTransferFrom(to, msg.sender, i, 1, "");
-
+        safeTransferFrom(msg.sender, _property[tokenId+1], 0, _price[tokenId+1], "");
+        safeTransferFrom(_property[tokenId+1], msg.sender, tokenId+1, 1, "");
     }
 
     function compareStrings(string memory a, string memory b) public pure returns (bool) {
