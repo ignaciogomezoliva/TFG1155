@@ -51,9 +51,9 @@ class App extends Component {
       for (var i = 1; i<=totalSupply; i++){
         const color = await contract.methods.colors(i-1).call()
         this.setState({colors: [...this.state.colors, color]})
-        const prop = await contract.methods.property(this.state.account, i).call()
-        console.log(prop.toNumber())
-        if(prop.toNumber() === 1) 
+        const prop = await contract.methods.property(i).call()
+        console.log(prop)
+        if(prop === this.state.account) 
           this.setState({colorsInPropery: [...this.state.colorsInPropery, color]})
       }
     } else {

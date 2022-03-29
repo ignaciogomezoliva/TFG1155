@@ -43,8 +43,8 @@ contract TFG is ERC1155{
         return colors.length;
     }
 
-    function property(address propietario, uint id) public view returns (uint256){
-        return balanceOf(propietario, id);
+    function property(uint id) public view returns (address){
+        return _property[id];
     }
 
     function funds(address propietario) public view returns (uint256){
