@@ -70,6 +70,7 @@ class App extends Component {
       totalSupply: 0,
       colors: [],
       colorsInPropery: [],
+      colorsSelling: [],
       funds: 0,
       show: false,
       errorMessage: '',
@@ -103,23 +104,28 @@ class App extends Component {
   }
 
   async comprar(color) {
-    var tokenId = -1;
-    for (var i = 0; i<this.state.totalSupply; i++){
-      if(this.state.colors[i] === color) tokenId = i;
+    if(this.state.colorsSelling.includes(color)){
+      var tokenId = -1;
+      for (var i = 0; i<this.state.totalSupply; i++){
+        if(this.state.colors[i] === color) tokenId = i;
+      }
+      try{
+        await this.state.contract.methods.buy(tokenId).send({ from: this.state.account })
+        .once('receipt', (receipt) => {
+          console.log("NFT transferido correctamente")
+        })
+  
+      } catch(err){
+        this.setState({errorMessage: err.message})
+      } finally {
+          this.setState({loading:false})
+      }
     }
-    try{
-      await this.state.contract.methods.buy(tokenId).send({ from: this.state.account })
-      .once('receipt', (receipt) => {
-        console.log("NFT transferido correctamente")
-      })
+    else {
+      this.state.contract.methods.permission().call()
+      this.setState({colorsSelling: [...this.state.colorsSelling, color]})
+    }
 
-    } catch(err){
-      this.setState({errorMessage: err.message})
-  } finally {
-      this.setState({loading:false})
-  }
-
-    
   }
 
 render() {
@@ -209,6 +215,7 @@ render() {
           <hr></hr>
           <div className="row text-center">
             {this.state.colors.map((color,key) => {
+              const buttonText = this.state.colorsSelling.includes(color) ? "Comprar" : "Vender"
               return (
                 <div key={key} className="col-md-3 mb-3">
                 <div 
@@ -220,7 +227,7 @@ render() {
                   </div>
                   <button onClick={e => {
                       this.comprar(color);
-                    }}>Comprar</button>
+                    }}>{buttonText}</button>
                 </div>
                 )
             })}

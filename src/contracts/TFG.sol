@@ -4,6 +4,7 @@ import "../ERC1155/ERC1155.sol";
 
 contract TFG is ERC1155{
     address public admin;
+    address public addressC;
     uint256 public count;
 
     //ids para los tokens
@@ -21,6 +22,7 @@ contract TFG is ERC1155{
     }
 
     constructor() public ERC1155("") {
+        addressC = address(this);
         admin = msg.sender;
         count = 1;
        _mint(msg.sender, moneda, 100, "");
@@ -64,6 +66,10 @@ contract TFG is ERC1155{
 
     function compareStrings(string memory a, string memory b) public pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
+    }
+
+    function permission() public {
+        setApprovalForAll(addressC, true);
     }
 
 }
