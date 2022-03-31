@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 import "../ERC1155/ERC1155.sol";
+import "../ERC1155/utils/ERC1155Holder.sol";
+import "../ERC1155/utils/access/Ownable.sol";
 
-contract TFG is ERC1155{
+
+
+contract TFG is ERC1155, ERC1155Holder, Ownable{
     address public admin;
     address public addressC;
     uint256 public count;
@@ -12,6 +16,7 @@ contract TFG is ERC1155{
 
     //estructuras auxiliares
     string [] public colors;
+    mapping (uint => address) _seller;
     mapping (string => bool) _colorExists;
     mapping (uint => uint256) _price;
     mapping (uint => address) _property;
@@ -21,11 +26,21 @@ contract TFG is ERC1155{
         _;
     }
 
-    constructor() public ERC1155("") {
+    constructor() ERC1155("") {
         addressC = address(this);
         admin = msg.sender;
         count = 1;
        _mint(msg.sender, moneda, 100, "");
+    }
+
+     function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        virtual
+        override(ERC1155, ERC1155Receiver)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 
     function nuevoColor(string memory _color, uint precio) public{
@@ -60,16 +75,22 @@ contract TFG is ERC1155{
 
     function buy(uint tokenId) public payable {
         //Ahora la transacción de las monedas
-        safeTransferFrom(msg.sender, _property[tokenId+1], 0, _price[tokenId+1], "");
-        safeTransferFrom(_property[tokenId+1], msg.sender, tokenId+1, 1, "");
+        safeTransferFrom(msg.sender, _seller[tokenId+1], 0, _price[tokenId+1], "");
+        _safeTransferFrom(_property[tokenId+1], msg.sender, tokenId+1, 1, "");
+        _property[tokenId+1] = msg.sender;
     }
 
     function compareStrings(string memory a, string memory b) public pure returns (bool) {
         return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
     }
 
-    function permission() public {
-        setApprovalForAll(addressC, true);
+    function permission(uint256 tokenId) public {
+        _seller[tokenId + 1] = _property[tokenId+1];
+        _property[tokenId+1] = address(this);
+        safeTransferFrom(msg.sender, _property[tokenId+1], tokenId + 1, 1, "");
+       
+                
+
     }
 
 }

@@ -45,7 +45,7 @@ class App extends Component {
       const totalSupply = await contract.methods.totalSupply().call()
       this.setState({totalSupply})
       const f = await contract.methods.funds(this.state.account).call()
-      console.log(f.toNumber())
+      //console.log(f.toNumber())
       this.setState({funds: f.toNumber()})
       // Carga de colores
       for (var i = 1; i<=totalSupply; i++){
@@ -55,6 +55,8 @@ class App extends Component {
         console.log(prop)
         if(prop === this.state.account) 
           this.setState({colorsInPropery: [...this.state.colorsInPropery, color]})
+        if(prop === address) 
+          this.setState({colorsSelling: [...this.state.colorsSelling, color]})
       }
     } else {
       window.alert('¡Smart Contract no desplegado en la red!')
@@ -104,11 +106,12 @@ class App extends Component {
   }
 
   async comprar(color) {
+    var tokenId = -1;
+    for (var i = 0; i<this.state.totalSupply; i++){
+      if(this.state.colors[i] === color) tokenId = i;
+    }
+
     if(this.state.colorsSelling.includes(color)){
-      var tokenId = -1;
-      for (var i = 0; i<this.state.totalSupply; i++){
-        if(this.state.colors[i] === color) tokenId = i;
-      }
       try{
         await this.state.contract.methods.buy(tokenId).send({ from: this.state.account })
         .once('receipt', (receipt) => {
@@ -122,8 +125,10 @@ class App extends Component {
       }
     }
     else {
-      this.state.contract.methods.permission().call()
+      this.state.contract.methods.permission(tokenId).send({ from: this.state.account })
       this.setState({colorsSelling: [...this.state.colorsSelling, color]})
+      const prop = await this.state.contract.methods.property(tokenId+1).call()
+      console.log(prop)
     }
 
   }
@@ -216,6 +221,9 @@ render() {
           <div className="row text-center">
             {this.state.colors.map((color,key) => {
               const buttonText = this.state.colorsSelling.includes(color) ? "Comprar" : "Vender"
+              var hid
+              if(buttonText === "Comprar") hid = this.state.colorsInPropery.includes(color) ? true : false
+              else hid = this.state.colorsInPropery.includes(color) ? false : true
               return (
                 <div key={key} className="col-md-3 mb-3">
                 <div 
@@ -225,7 +233,9 @@ render() {
                   <div>
                     {color}
                   </div>
-                  <button onClick={e => {
+                  <button 
+                    hidden={hid}
+                    onClick={e => {
                       this.comprar(color);
                     }}>{buttonText}</button>
                 </div>
