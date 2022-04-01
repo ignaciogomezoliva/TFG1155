@@ -3,7 +3,6 @@ import './App.css';
 import Web3 from 'web3'
 import TFG from '../abis/TFG.json'
 import Modal from './Modal';
-import CustomPopup from './CustomPopup.jsx'
 
 
 class App extends Component {
@@ -75,7 +74,6 @@ class App extends Component {
       colorsSelling: [],
       funds: 0,
       show: false,
-      show2: false,
       errorMessage: '',
       loading: false,
       prices: []
@@ -87,16 +85,6 @@ class App extends Component {
       show: !this.state.show
     });
   };
-
-  showModal2 = e => {
-    this.setState({
-      show2: !this.state.show2
-    })
-  };
-
-  popupCloseHandler = e => {
-    this.showModal2()
-  }
 
   onClose = e => {
       this.props.onClose && this.props.onClose(e);
@@ -113,7 +101,7 @@ class App extends Component {
     })
   }
 
-  async price(precio, color) {
+  async updatePrice(precio, color) {
     var tokenId = -1;
     for (var i = 0; i<this.state.totalSupply; i++){
       if(this.state.colors[i] === color) tokenId = i;
@@ -239,7 +227,6 @@ render() {
             {this.state.colors.map((color,key) => {
               var buttonText
               var hid = false
-              var id
               if(this.state.colorsSelling.includes(color)) buttonText = this.state.colorsInPropery.includes(color) ? "Retirar" : "Comprar"
               else if(this.state.colorsInPropery.includes(color)) buttonText = "Vender"
               else hid = true
@@ -250,9 +237,7 @@ render() {
                   style={{ backgroundColor: color }}>
                 </div>
                   <div>
-                    <button onClick={(e) => this.showModal2()}>
-                      {color}
-                    </button>
+                    {color}
                     <button 
                       className='btn btn-block btn-success '
                       hidden={hid}
@@ -263,6 +248,7 @@ render() {
                     </button>
                   </div>
                 </div>
+                
                 )
             })}
           </div>
