@@ -1,9 +1,9 @@
-import React, { Component } from 'react';
+import React, { Component, useState } from 'react';
 import './App.css';
 import Web3 from 'web3'
 import TFG from '../abis/TFG.json'
 import Modal from './Modal';
-
+import CustomPopup from './CustomPopup.jsx'
 
 
 class App extends Component {
@@ -75,6 +75,7 @@ class App extends Component {
       colorsSelling: [],
       funds: 0,
       show: false,
+      show2: false,
       errorMessage: '',
       loading: false
     }
@@ -85,6 +86,16 @@ class App extends Component {
       show: !this.state.show
     });
   };
+
+  showModal2 = e => {
+    this.setState({
+      show2: !this.state.show2
+    })
+  };
+
+  popupCloseHandler = e => {
+    this.showModal2()
+  }
 
   onClose = e => {
       this.props.onClose && this.props.onClose(e);
@@ -191,10 +202,10 @@ render() {
                 <button  
                   className="btn btn-block btn-info"
                     onClick={e => {
-                      this.showModal();
-                    }}> 
-                  NFTs en propiedad
-                  </button>
+                    this.showModal();
+                  }}> 
+                NFTs en propiedad
+                </button>
                 <div className="d-inline-flex flex-row justify-content-center">
                   <Modal 
                     onClose={this.showModal} 
@@ -231,13 +242,26 @@ render() {
                   style={{ backgroundColor: color }}>
                 </div>
                   <div>
-                    {color}
+                    <button onClick={(e) => this.showModal2()}>
+                      {color}
+                    </button>
+                    <CustomPopup
+                      onClose={this.popupCloseHandler}
+                      show={this.state.show2}
+                      title={color}
+                      >
+                      
+                      <button 
+                        className='btn btn-success'
+                        hidden={hid}
+                        onClick={e => {
+                          this.comprar(color);
+                        }}>
+                        {buttonText}
+                      </button>
+                    </CustomPopup>
+                    
                   </div>
-                  <button 
-                    hidden={hid}
-                    onClick={e => {
-                      this.comprar(color);
-                    }}>{buttonText}</button>
                 </div>
                 )
             })}
