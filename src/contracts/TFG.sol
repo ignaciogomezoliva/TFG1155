@@ -16,10 +16,10 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
 
     //estructuras auxiliares
     string [] public colors;
-    mapping (uint => address) _seller;
+    mapping (uint256 => address) _seller;
     mapping (string => bool) _colorExists;
-    mapping (uint => uint256) _price;
-    mapping (uint => address) _property;
+    mapping (uint256 => uint) _price;
+    mapping (uint256 => address) _property;
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "only admin can call this");
@@ -50,7 +50,6 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         _property[count] = msg.sender;
         bytes memory dataColor = bytes(_color);
         _mint(msg.sender, count, 1, dataColor);
-        //setApprove? 
         count++;
         _colorExists[_color] = true;
         
@@ -60,12 +59,16 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         return colors.length;
     }
 
-    function property(uint id) public view returns (address){
+    function property(uint256 id) public view returns (address){
         return _property[id];
     }
 
     function funds(address propietario) public view returns (uint256){
         return balanceOf(propietario, 0);
+    }
+
+    function price(uint256 id) public view returns (uint256){
+        return _price[id];
     }
 
     function addFunds() public payable onlyAdmin{
@@ -80,17 +83,14 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         _property[tokenId+1] = msg.sender;
     }
 
-    function compareStrings(string memory a, string memory b) public pure returns (bool) {
-        return (keccak256(abi.encodePacked((a))) == keccak256(abi.encodePacked((b))));
-    }
-
     function permission(uint256 tokenId) public {
         _seller[tokenId + 1] = _property[tokenId+1];
         _property[tokenId+1] = address(this);
         safeTransferFrom(msg.sender, _property[tokenId+1], tokenId + 1, 1, "");
-       
-                
+    }
 
+    function updatePrice(uint newPrice, uint256 tokenId) public {
+        _price[tokenId+1] = newPrice;
     }
 
 }

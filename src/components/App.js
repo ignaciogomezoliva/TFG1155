@@ -1,4 +1,4 @@
-import React, { Component, useState } from 'react';
+import React, { Component } from 'react';
 import './App.css';
 import Web3 from 'web3'
 import TFG from '../abis/TFG.json'
@@ -77,7 +77,8 @@ class App extends Component {
       show: false,
       show2: false,
       errorMessage: '',
-      loading: false
+      loading: false,
+      prices: []
     }
   }
 
@@ -112,6 +113,14 @@ class App extends Component {
     })
   }
 
+  async price(precio, color) {
+    var tokenId = -1;
+    for (var i = 0; i<this.state.totalSupply; i++){
+      if(this.state.colors[i] === color) tokenId = i;
+    }
+    await this.state.contract.methods.updatePrice(precio, tokenId).send({ from: this.state.account})
+  }
+
   start = e => {
     this.state.contract.methods.addFunds().send({ from: this.state.account })
   }
@@ -137,9 +146,6 @@ class App extends Component {
     }
     else {
       this.state.contract.methods.permission(tokenId).send({ from: this.state.account })
-      this.setState({colorsSelling: [...this.state.colorsSelling, color]})
-      const prop = await this.state.contract.methods.property(tokenId+1).call()
-      console.log(prop)
     }
 
   }
@@ -231,10 +237,12 @@ render() {
           <hr></hr>
           <div className="row text-center">
             {this.state.colors.map((color,key) => {
-              const buttonText = this.state.colorsSelling.includes(color) ? "Comprar" : "Vender"
-              var hid
-              if(buttonText === "Comprar") hid = this.state.colorsInPropery.includes(color) ? true : false
-              else hid = this.state.colorsInPropery.includes(color) ? false : true
+              var buttonText
+              var hid = false
+              var id
+              if(this.state.colorsSelling.includes(color)) buttonText = this.state.colorsInPropery.includes(color) ? "Retirar" : "Comprar"
+              else if(this.state.colorsInPropery.includes(color)) buttonText = "Vender"
+              else hid = true
               return (
                 <div key={key} className="col-md-3 mb-3">
                 <div 
@@ -245,22 +253,14 @@ render() {
                     <button onClick={(e) => this.showModal2()}>
                       {color}
                     </button>
-                    <CustomPopup
-                      onClose={this.popupCloseHandler}
-                      show={this.state.show2}
-                      title={color}
-                      >
-                      
-                      <button 
-                        className='btn btn-success'
-                        hidden={hid}
-                        onClick={e => {
-                          this.comprar(color);
-                        }}>
-                        {buttonText}
-                      </button>
-                    </CustomPopup>
-                    
+                    <button 
+                      className='btn btn-block btn-success '
+                      hidden={hid}
+                      onClick={e => {
+                        this.comprar(color);
+                      }}>
+                      {buttonText}
+                    </button>
                   </div>
                 </div>
                 )
