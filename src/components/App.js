@@ -6,126 +6,7 @@ import Modal from './Modal';
 import ipfs from './ipfs.js'
 
 class App extends Component {
-
-  captureFile =(event) => 
-  {
-      event.stopPropagation()
-      event.preventDefault()
-      const file = event.target.files[0]
-      let reader = new window.FileReader()
-      reader.readAsArrayBuffer(file)
-      reader.onloadend = () => this.convertToBuffer(reader)    
-    };
-
-  convertToBuffer = async(reader) =>
-  {
-    //file is converted to a buffer to prepare for uploading to IPFS
-      const buffer = await Buffer.from(reader.result);
-    //set this buffer -using es6 syntax
-      this.setState({buffer});
-  };
-
-  async onSubmit(precio, titulo){
-
-      await ipfs.add(this.state.buffer, (err, ipfsHash) => 
-      {
-        console.log(err,ipfsHash);
-        
-        this.setState({ ipfsHash:ipfsHash[0].hash });
- 
-        this.state.contract.methods.sendHash(this.state.ipfsHash, precio, titulo).send({
-          from: this.state.account
-        }, (error, transactionHash) => {
-          this.setState({transactionHash});
-          this.setState({
-            docs: [...this.state.docs, titulo]
-          })
-        }); 
-      }) 
-    }; 
-
-  async  downloadImage(d) {
-    
-    var id
-    for (var i = 0; i<this.state.totalSupply; i++){
-      const doc = await this.state.contract.methods.docs(i).call()
-      const title = await this.state.contract.methods.getTitle(doc).call()
-      if(title === d) id = doc;
-    }
-    const imageSrc = `https:ipfs.io/ipfs/${id}`
-    const image = await fetch(imageSrc)
-    const imageBlog = await image.blob()
-    const imageURL = URL.createObjectURL(imageBlog)
   
-    const link = document.createElement('a')
-    link.href = imageURL
-    link.download = 'prueba'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
-  async componentWillMount() {
-    await this.loadWeb3()
-    await this.loadBlockchainData()
-  }
-
-  async loadWeb3() {
-    if(window.ethereum) {
-      window.web3 = new Web3(window.ethereum)
-      await window.ethereum.enable()
-    }
-
-    else if (window.web3) {
-      window.web3 = new Web3(window.web3.currentProvider)
-    }
-
-    else {
-      window.alert('¡Considera usar Metamask!')
-    }
-
-  }
-
-  async loadBlockchainData(){
-    const web3 = window.web3
-    // Cargar una cuenta
-    const accounts = await web3.eth.getAccounts()
-    this.setState({account: accounts[0]})
-    const networkId = await web3.eth.net.getId()
-    const networkData = TFG.networks[networkId]
-    if(networkData) {
-      const abi = TFG.abi 
-      const address = networkData.address
-      const contract = new web3.eth.Contract(abi, address)
-      this.setState({contract})
-      // Función 'totalSupply' del Smart Contract
-      const totalSupply = await contract.methods.totalSupply().call()
-      this.setState({totalSupply})
-      const f = await contract.methods.funds(this.state.account).call()
-      //console.log(f.toNumber())
-      this.setState({funds: f.toNumber()})
-      // Carga de colores
-      for (var i = 0; i<totalSupply; i++){
-        const doc = await contract.methods.docs(i).call()
-        console.log(doc)
-        const title = await contract.methods.getTitle(doc).call()
-        console.log(title)
-        this.setState({docs: [...this.state.docs, title]})
-        const prop = await contract.methods.getProperty(doc).call()
-        console.log(prop)
-        if(prop === this.state.account) {
-          this.setState({docsInPropery: [...this.state.docsInPropery, title]})
-          console.log("TUYO")
-        }
-          
-        if(prop === address) 
-          this.setState({docsSelling: [...this.state.docsSelling, title]})
-        }
-    } else {
-      window.alert('¡Smart Contract no desplegado en la red!')
-    }
-  }
-
   // Constructor
   constructor(props) {
     super(props)
@@ -147,6 +28,66 @@ class App extends Component {
     }
   }
 
+  //Carga de los componentes de la blockchain
+  async componentWillMount() {
+    await this.loadWeb3()
+    await this.loadBlockchainData()
+  }
+
+  async loadWeb3() {
+    if(window.ethereum) {
+      window.web3 = new Web3(window.ethereum)
+      await window.ethereum.enable()
+    }
+    else if (window.web3) {
+      window.web3 = new Web3(window.web3.currentProvider)
+    }
+    else {
+      window.alert('¡Considera usar Metamask!')
+    }
+  }
+
+  async loadBlockchainData(){
+    const web3 = window.web3
+    // Cargar una cuenta
+    const accounts = await web3.eth.getAccounts()
+    this.setState({account: accounts[0]})
+    const networkId = await web3.eth.net.getId()
+    const networkData = TFG.networks[networkId]
+    if(networkData) {
+      const abi = TFG.abi 
+      const address = networkData.address
+      const contract = new web3.eth.Contract(abi, address)
+      this.setState({contract})
+      // Función 'totalSupply' del Smart Contract
+      const totalSupply = await contract.methods.totalSupply().call()
+      this.setState({totalSupply})
+      const f = await contract.methods.funds(this.state.account).call()
+      this.setState({funds: f.toNumber()})
+      // Carga de documentos
+      console.log("Documentos almacenados en la cadena de bloques")
+      for (var i = 0; i<totalSupply; i++){
+        const doc = await contract.methods.docs(i).call()
+        console.log("Hash del documento: " + doc)
+        const title = await contract.methods.getTitle(doc).call()
+        console.log("Título del documento: " + title)
+        this.setState({docs: [...this.state.docs, title]})
+        const prop = await contract.methods.getProperty(doc).call()
+        console.log("Propietario del documento: " + prop)
+        if(prop === this.state.account) {
+          this.setState({docsInPropery: [...this.state.docsInPropery, title]})
+          console.log("No está en venta")
+        }  
+        if(prop === address) 
+          this.setState({docsSelling: [...this.state.docsSelling, title]})
+          console.log("Está en venta")
+        }
+    } else {
+      window.alert('¡Smart Contract no desplegado en la red!')
+    }
+  }
+
+  //Control del modal de los NFTs en propiedad
   showModal = e => {
     this.setState({
       show: !this.state.show
@@ -157,45 +98,67 @@ class App extends Component {
       this.props.onClose && this.props.onClose(e);
       };
 
-
-  async updatePrice(precio, ipfsHash) {
-    var tokenId = -1;
-    for (var i = 0; i<this.state.totalSupply; i++){
-      if(this.state.docs[i] === ipfsHash) tokenId = i;
-    }
-    await this.state.contract.methods.updatePrice(precio, tokenId).send({ from: this.state.account})
-  }
-
+  //Añadir fondos; únicamente disponible para el admin
   start = e => {
     this.state.contract.methods.addFunds().send({ from: this.state.account })
   }
 
-  async comprar(ipfsHash) {
-    var tokenId = -1;
-    for (var i = 0; i<this.state.totalSupply; i++){
-      if(this.state.docs[i] === ipfsHash) tokenId = i;
+  //Funciones de procesado y subida de ficheros
+  captureFile =(event) => {
+      event.stopPropagation()
+      event.preventDefault()
+      const file = event.target.files[0]
+      let reader = new window.FileReader()
+      reader.readAsArrayBuffer(file)
+      reader.onloadend = () => this.convertToBuffer(reader)    
     }
 
-    if(this.state.docsSelling.includes(ipfsHash)){
-      try{
-        await this.state.contract.methods.buy(tokenId).send({ from: this.state.account })
-        .once('receipt', (receipt) => {
-          console.log("NFT transferido correctamente")
-        })
-  
-      } catch(err){
-        this.setState({errorMessage: err.message})
-      } finally {
-          this.setState({loading:false})
-      }
-    }
-    else {
-      this.state.contract.methods.permission(tokenId).send({ from: this.state.account })
-    }
-
+  convertToBuffer = async(reader) => {
+      const buffer = await Buffer.from(reader.result);
+      this.setState({buffer})
   }
 
-render() {
+  async onSubmit(precio, titulo){
+
+      await ipfs.add(this.state.buffer, (err, ipfsHash) => 
+      {
+        console.log(err,ipfsHash)
+        
+        this.setState({ ipfsHash:ipfsHash[0].hash })
+ 
+        this.state.contract.methods.sendHash(this.state.ipfsHash, precio, titulo).send({
+          from: this.state.account
+        }, (error, transactionHash) => {
+          this.setState({transactionHash})
+          this.setState({
+            docs: [...this.state.docs, titulo]
+          })
+        }) 
+      }) 
+    } 
+
+  async  downloadFile(d) {
+    var id
+    for (var i = 0; i<this.state.totalSupply; i++){
+      const doc = await this.state.contract.methods.docs(i).call()
+      const title = await this.state.contract.methods.getTitle(doc).call()
+      if(title === d) id = doc;
+    }
+    const fileSrc = `https:ipfs.io/ipfs/${id}`
+    const file = await fetch(fileSrc)
+    const fileBlog = await file.blob()
+    const fileURL = URL.createObjectURL(fileBlog)
+  
+    const link = document.createElement('a')
+    link.href = fileURL
+    link.download = 'prueba'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  //Renderizado de la página html
+  render() {
     return (
       <div>
         <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
@@ -289,7 +252,7 @@ render() {
                 return(
                   <div key={key}> 
                     <h3>{doc}</h3>
-                    <button onClick={(e) => {this.downloadImage(doc)}}> Descargar </button>
+                    <button onClick={(e) => {this.downloadfile(doc)}}> Descargar </button>
                   </div>
                 )
               })
