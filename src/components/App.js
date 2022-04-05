@@ -25,7 +25,7 @@ class App extends Component {
       this.setState({buffer});
   };
 
-  async onSubmit(precio){
+  async onSubmit(precio, titulo){
 
       await ipfs.add(this.state.buffer, (err, ipfsHash) => 
       {
@@ -33,16 +33,26 @@ class App extends Component {
         
         this.setState({ ipfsHash:ipfsHash[0].hash });
  
-        this.state.contract.methods.sendHash(this.state.ipfsHash, precio).send({
+        this.state.contract.methods.sendHash(this.state.ipfsHash, precio, titulo).send({
           from: this.state.account
         }, (error, transactionHash) => {
           this.setState({transactionHash});
+          this.setState({
+            docs: [...this.state.docs, titulo]
+          })
         }); 
       }) 
     }; 
 
-  async  downloadImage(img) {
-    const imageSrc = `https:ipfs.io/ipfs/${img}`
+  async  downloadImage(d) {
+    
+    var id
+    for (var i = 0; i<this.state.totalSupply; i++){
+      const doc = await this.state.contract.methods.docs(i).call()
+      const title = await this.state.contract.methods.getTitle(doc).call()
+      if(title === d) id = doc;
+    }
+    const imageSrc = `https:ipfs.io/ipfs/${id}`
     const image = await fetch(imageSrc)
     const imageBlog = await image.blob()
     const imageURL = URL.createObjectURL(imageBlog)
@@ -95,16 +105,21 @@ class App extends Component {
       //console.log(f.toNumber())
       this.setState({funds: f.toNumber()})
       // Carga de colores
-      for (var i = 1; i<=totalSupply; i++){
-        const doc = await contract.methods.docs(i-1).call()
-        this.setState({docs: [...this.state.docs, doc]})
-        const prop = await contract.methods.property(i).call()
+      for (var i = 0; i<totalSupply; i++){
+        const doc = await contract.methods.docs(i).call()
+        console.log(doc)
+        const title = await contract.methods.getTitle(doc).call()
+        console.log(title)
+        this.setState({docs: [...this.state.docs, title]})
+        const prop = await contract.methods.getProperty(doc).call()
         console.log(prop)
-        /*if(prop === this.state.account) 
-          this.setState({docsInProperty: [...this.state.docsInProperty, doc]})
+        if(prop === this.state.account) {
+          this.setState({docsInPropery: [...this.state.docsInPropery, title]})
+          console.log("TUYO")
+        }
+          
         if(prop === address) 
-          this.setState({docsSelling: [...this.state.docsSelling, doc]})
-        */
+          this.setState({docsSelling: [...this.state.docsSelling, title]})
         }
     } else {
       window.alert('¡Smart Contract no desplegado en la red!')
@@ -142,16 +157,6 @@ class App extends Component {
       this.props.onClose && this.props.onClose(e);
       };
 
-  mint = (ipfsHash, precio) => {
-    console.log('¡Nuevo NFT en procedimiento!')
- 
-    this.state.contract.methods.nuevoDoc(ipfsHash, precio).send({ from: this.state.account })
-    .once('receipt', (receipt) => {
-      this.setState({
-        docs: [...this.state.docs, ipfsHash]
-      })
-    })
-  }
 
   async updatePrice(precio, ipfsHash) {
     var tokenId = -1;
@@ -219,13 +224,16 @@ render() {
                 <form onSubmit={(event) => {
                   event.preventDefault();
                   const precio = this.precio.value
-                  this.onSubmit(precio)
+                  const titulo =this.titulo.value
+                  this.onSubmit(precio, titulo)
                   
                   }}>
 
                   <input 
-                  type = "file"
-                  onChange = {this.captureFile}
+                  type = 'text'
+                  className = 'form-control mb-1'
+                  placeholder = 'Título del NFT'
+                  ref = {(input) => {this.titulo = input}}
                   />
 
                   <input 
@@ -235,19 +243,58 @@ render() {
                   ref = {(input) => {this.precio = input}}
                   />
 
+                  <input 
+                  type = "file"
+                  onChange = {this.captureFile}
+                  />
 
                   <button 
-                  type="submit"> 
+                  type="submit"
+                  className='btn btn-success'> 
                   Nuevo NFT 
                   </button>
 
                 </form>
 
-                <img src={`https:ipfs.io/ipfs/${this.state.ipfsHash}`} alt=""/>
-                <button onClick={(e) => {this.downloadImage(this.state.ipfsHash)}}> Descargar </button>
-            
+                <div className="content mr-auto ml-auto">
+                  <button  
+                    className="btn btn-block btn-info"
+                      onClick={e => {
+                      this.showModal();
+                    }}> 
+                  NFTs en propiedad
+                  </button>
+                  <div className="d-inline-flex flex-row justify-content-center">
+                  <Modal 
+                    onClose={this.showModal} 
+                    show={this.state.show}> 
+                    {this.state.docsInPropery.map((doc,key) => {
+                      return (
+                        <div key={key} className="row text-center">
+                          <div>
+                            {doc}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </Modal>
+                  </div>
+                </div>
               </div>
             </main>
+
+            <hr></hr>
+            <div className='mx-auto row text-center'>
+              {this.state.docs.map((doc, key) => {
+                return(
+                  <div key={key}> 
+                    <h3>{doc}</h3>
+                    <button onClick={(e) => {this.downloadImage(doc)}}> Descargar </button>
+                  </div>
+                )
+              })
+              }
+            </div>
           </div>
         </div>
       </div>

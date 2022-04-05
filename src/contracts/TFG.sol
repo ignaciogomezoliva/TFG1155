@@ -16,10 +16,12 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
 
     //estructuras auxiliares
     string [] public docs;
-    mapping (uint256 => address) _seller;
+    mapping (string => address) _seller;
     mapping (string => bool) _docExists;
-    mapping (uint256 => uint) _price;
-    mapping (uint256 => address) _property;
+    mapping (string => uint) _price;
+    mapping (string => address) _property;
+    mapping (string => string) _titles;
+    mapping (string => uint) _ids;
 
 
     string ipfsHash;
@@ -41,12 +43,14 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         return super.supportsInterface(interfaceId);
     }
  
-    function sendHash(string memory x, uint precio) public {
+    function sendHash(string memory x, uint precio, string memory titulo) public {
         require(!_docExists[x]);
         ipfsHash = x;
         docs.push(x);
-        _price[count] = precio;
-        _property[count] = msg.sender;
+        _ids[x] = count;
+        _price[x] = precio;
+        _property[x] = msg.sender;
+        _titles[x] = titulo;
         bytes memory dataColor = bytes(x);
         _mint(msg.sender, count, 1, dataColor);
         count++;
@@ -62,58 +66,47 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         _;
     }
 
-    
-
-
-
-    /*function nuevoDoc(string memory _ipfsHash, uint precio) public{
-        require(!_colorExists[_ipfsHash]);
-        docs.push(_ipfsHash);
-        _price[count] = precio;
-        _property[count] = msg.sender;
-        bytes memory dataColor = bytes(_ipfsHash);
-        _mint(msg.sender, count, 1, dataColor);
-        count++;
-        _colorExists[_ipfsHash] = true;
-        
-    }*/
-
     function totalSupply() public view returns (uint256){
         return docs.length;
     }
 
-    function property(uint256 id) public view returns (address){
+    function getProperty(string memory id) public view returns (address){
         return _property[id];
+    }
+
+    function getTitle(string memory id) public view returns(string memory title){
+        return _titles[id];
+    }
+
+    function getPrice(string memory id) public view returns (uint256){
+        return _price[id];
     }
 
     function funds(address propietario) public view returns (uint256){
         return balanceOf(propietario, 0);
     }
-
-    function price(uint256 id) public view returns (uint256){
-        return _price[id];
-    }
+    
 
     function addFunds() public payable onlyAdmin{
         _mint(msg.sender, 0, 100, "");
     }
 
 
-    function buy(uint tokenId) public payable {
+    function buy(string memory id) public payable {
         //Ahora la transacción de las monedas
-        safeTransferFrom(msg.sender, _seller[tokenId+1], 0, _price[tokenId+1], "");
-        _safeTransferFrom(_property[tokenId+1], msg.sender, tokenId+1, 1, "");
-        _property[tokenId+1] = msg.sender;
+        safeTransferFrom(msg.sender, _seller[id], 0, _price[id], "");
+        _safeTransferFrom(_property[id], msg.sender, _ids[id], 1, "");
+        _property[id] = msg.sender;
     }
 
-    function permission(uint256 tokenId) public {
-        _seller[tokenId + 1] = _property[tokenId+1];
-        _property[tokenId+1] = address(this);
-        safeTransferFrom(msg.sender, _property[tokenId+1], tokenId + 1, 1, "");
+    function permission(string memory id) public {
+        _seller[id] = _property[id];
+        _property[id] = address(this);
+        safeTransferFrom(msg.sender, _property[id], _ids[id], 1, "");
     }
 
-    function updatePrice(uint newPrice, uint256 tokenId) public {
-        _price[tokenId+1] = newPrice;
+    function updatePrice(uint newPrice, string memory id) public {
+        _price[id] = newPrice;
     }
 
 }
