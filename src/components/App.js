@@ -3,9 +3,57 @@ import './App.css';
 import Web3 from 'web3'
 import TFG from '../abis/TFG.json'
 import Modal from './Modal';
-
+import ipfs from './ipfs.js'
 
 class App extends Component {
+
+  captureFile =(event) => 
+  {
+      event.stopPropagation()
+      event.preventDefault()
+      const file = event.target.files[0]
+      let reader = new window.FileReader()
+      reader.readAsArrayBuffer(file)
+      reader.onloadend = () => this.convertToBuffer(reader)    
+    };
+
+  convertToBuffer = async(reader) =>
+  {
+    //file is converted to a buffer to prepare for uploading to IPFS
+      const buffer = await Buffer.from(reader.result);
+    //set this buffer -using es6 syntax
+      this.setState({buffer});
+  };
+
+  async onSubmit(precio){
+
+      await ipfs.add(this.state.buffer, (err, ipfsHash) => 
+      {
+        console.log(err,ipfsHash);
+        
+        this.setState({ ipfsHash:ipfsHash[0].hash });
+ 
+        this.state.contract.methods.sendHash(this.state.ipfsHash, precio).send({
+          from: this.state.account
+        }, (error, transactionHash) => {
+          this.setState({transactionHash});
+        }); 
+      }) 
+    }; 
+
+  async  downloadImage(img) {
+    const imageSrc = `https:ipfs.io/ipfs/${img}`
+    const image = await fetch(imageSrc)
+    const imageBlog = await image.blob()
+    const imageURL = URL.createObjectURL(imageBlog)
+  
+    const link = document.createElement('a')
+    link.href = imageURL
+    link.download = 'prueba'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
 
   async componentWillMount() {
     await this.loadWeb3()
@@ -48,15 +96,16 @@ class App extends Component {
       this.setState({funds: f.toNumber()})
       // Carga de colores
       for (var i = 1; i<=totalSupply; i++){
-        const color = await contract.methods.colors(i-1).call()
-        this.setState({colors: [...this.state.colors, color]})
+        const doc = await contract.methods.docs(i-1).call()
+        this.setState({docs: [...this.state.docs, doc]})
         const prop = await contract.methods.property(i).call()
         console.log(prop)
-        if(prop === this.state.account) 
-          this.setState({colorsInPropery: [...this.state.colorsInPropery, color]})
+        /*if(prop === this.state.account) 
+          this.setState({docsInProperty: [...this.state.docsInProperty, doc]})
         if(prop === address) 
-          this.setState({colorsSelling: [...this.state.colorsSelling, color]})
-      }
+          this.setState({docsSelling: [...this.state.docsSelling, doc]})
+        */
+        }
     } else {
       window.alert('¡Smart Contract no desplegado en la red!')
     }
@@ -69,14 +118,17 @@ class App extends Component {
       account: '',
       contract: null,
       totalSupply: 0,
-      colors: [],
-      colorsInPropery: [],
-      colorsSelling: [],
+      docs: [],
+      docsInPropery: [],
+      docsSelling: [],
       funds: 0,
       show: false,
       errorMessage: '',
       loading: false,
-      prices: []
+      prices: [],
+      ipfsHash: null,
+      transactionHash:'',
+      buffer:''
     }
   }
 
@@ -90,21 +142,21 @@ class App extends Component {
       this.props.onClose && this.props.onClose(e);
       };
 
-  mint = (color, precio) => {
+  mint = (ipfsHash, precio) => {
     console.log('¡Nuevo NFT en procedimiento!')
  
-    this.state.contract.methods.nuevoColor(color, precio).send({ from: this.state.account })
+    this.state.contract.methods.nuevoDoc(ipfsHash, precio).send({ from: this.state.account })
     .once('receipt', (receipt) => {
       this.setState({
-        colors: [...this.state.colors, color]
+        docs: [...this.state.docs, ipfsHash]
       })
     })
   }
 
-  async updatePrice(precio, color) {
+  async updatePrice(precio, ipfsHash) {
     var tokenId = -1;
     for (var i = 0; i<this.state.totalSupply; i++){
-      if(this.state.colors[i] === color) tokenId = i;
+      if(this.state.docs[i] === ipfsHash) tokenId = i;
     }
     await this.state.contract.methods.updatePrice(precio, tokenId).send({ from: this.state.account})
   }
@@ -113,13 +165,13 @@ class App extends Component {
     this.state.contract.methods.addFunds().send({ from: this.state.account })
   }
 
-  async comprar(color) {
+  async comprar(ipfsHash) {
     var tokenId = -1;
     for (var i = 0; i<this.state.totalSupply; i++){
-      if(this.state.colors[i] === color) tokenId = i;
+      if(this.state.docs[i] === ipfsHash) tokenId = i;
     }
 
-    if(this.state.colorsSelling.includes(color)){
+    if(this.state.docsSelling.includes(ipfsHash)){
       try{
         await this.state.contract.methods.buy(tokenId).send({ from: this.state.account })
         .once('receipt', (receipt) => {
@@ -165,92 +217,37 @@ render() {
 
                 <h1> DApp de un coleccionable de NFT's</h1>
                 <form onSubmit={(event) => {
-                  event.preventDefault()
-                  const color = this.color.value
+                  event.preventDefault();
                   const precio = this.precio.value
-                  this.mint(color, precio)
-                }}>
+                  this.onSubmit(precio)
+                  
+                  }}>
 
-                <input 
-                type = 'text'
-                className = 'form-control mb-1'
-                placeholder = 'Ej: #FFFFFF'
-                ref = {(input) => {this.color = input}}
-                />
+                  <input 
+                  type = "file"
+                  onChange = {this.captureFile}
+                  />
 
-                <input 
-                type = 'text'
-                className = 'form-control mb-1'
-                placeholder = '5 monedas'
-                ref = {(input) => {this.precio = input}}
-                />
+                  <input 
+                  type = 'text'
+                  className = 'form-control mb-1'
+                  placeholder = '5 monedas'
+                  ref = {(input) => {this.precio = input}}
+                  />
 
-                <input 
-                type = 'submit'
-                className="btn btn-block btn-success"
-                value = "NUEVO NFT"
-                />
+
+                  <button 
+                  type="submit"> 
+                  Nuevo NFT 
+                  </button>
+
                 </form>
-              </div>
-              <div className="content mr-auto ml-auto">
-                <button  
-                  className="btn btn-block btn-info"
-                    onClick={e => {
-                    this.showModal();
-                  }}> 
-                NFTs en propiedad
-                </button>
-                <div className="d-inline-flex flex-row justify-content-center">
-                  <Modal 
-                    onClose={this.showModal} 
-                    show={this.state.show}> 
-                    {this.state.colorsInPropery.map((color,key) => {
-                      return (
-                        <div key={key} className="row text-center">
-                          <div 
-                            className="token-little" 
-                            style={{ backgroundColor: color }}>
-                          </div>
-                          <div>
-                            {color}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </Modal>
-                </div>
+
+                <img src={`https:ipfs.io/ipfs/${this.state.ipfsHash}`} alt=""/>
+                <button onClick={(e) => {this.downloadImage(this.state.ipfsHash)}}> Descargar </button>
+            
               </div>
             </main>
-          </div>
-          <hr></hr>
-          <div className="row text-center">
-            {this.state.colors.map((color,key) => {
-              var buttonText
-              var hid = false
-              if(this.state.colorsSelling.includes(color)) buttonText = this.state.colorsInPropery.includes(color) ? "Retirar" : "Comprar"
-              else if(this.state.colorsInPropery.includes(color)) buttonText = "Vender"
-              else hid = true
-              return (
-                <div key={key} className="col-md-3 mb-3">
-                <div 
-                  className="token" 
-                  style={{ backgroundColor: color }}>
-                </div>
-                  <div>
-                    {color}
-                    <button 
-                      className='btn btn-block btn-success '
-                      hidden={hid}
-                      onClick={e => {
-                        this.comprar(color);
-                      }}>
-                      {buttonText}
-                    </button>
-                  </div>
-                </div>
-                
-                )
-            })}
           </div>
         </div>
       </div>
