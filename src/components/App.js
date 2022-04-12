@@ -58,6 +58,8 @@ class App extends Component {
       const abi = TFG.abi 
       const address = networkData.address
       const contract = new web3.eth.Contract(abi, address)
+      const addressC = await contract.methods.addressC.call()
+      console.log("La dirección del cotrato es: " + addressC)
       this.setState({contract})
       // Función 'totalSupply' del Smart Contract
       const totalSupply = await contract.methods.totalSupply().call()
@@ -65,7 +67,7 @@ class App extends Component {
       const f = await contract.methods.funds(this.state.account).call()
       this.setState({funds: f.toNumber()})
       // Carga de documentos
-      console.log("Documentos almacenados en la cadena de bloques")
+      console.log("[Documentos almacenados en la cadena de bloques]")
       for (var i = 0; i<totalSupply; i++){
         const doc = await contract.methods.docs(i).call()
         console.log("Hash del documento: " + doc)
@@ -78,7 +80,7 @@ class App extends Component {
           this.setState({docsInPropery: [...this.state.docsInPropery, title]})
           console.log("No está en venta")
         }  
-        if(prop === address) 
+        else if(prop === addressC) 
           this.setState({docsSelling: [...this.state.docsSelling, title]})
           console.log("Está en venta")
         }
@@ -144,17 +146,47 @@ class App extends Component {
       const title = await this.state.contract.methods.getTitle(doc).call()
       if(title === d) id = doc;
     }
-    const fileSrc = `https:ipfs.io/ipfs/${id}`
-    const file = await fetch(fileSrc)
-    const fileBlog = await file.blob()
-    const fileURL = URL.createObjectURL(fileBlog)
+      //El documento te pertenece; lo puedes descargar
+      const fileSrc = `https:ipfs.io/ipfs/${id}`
+      const file = await fetch(fileSrc)
+      const fileBlog = await file.blob()
+      const fileURL = URL.createObjectURL(fileBlog)
+    
+      const link = document.createElement('a')
+      link.href = fileURL
+      link.download = 'prueba'
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
   
-    const link = document.createElement('a')
-    link.href = fileURL
-    link.download = 'prueba'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+  }
+
+  async buy(d){
+    var id
+    for (var i = 0; i<this.state.totalSupply; i++){
+      const doc = await this.state.contract.methods.docs(i).call()
+      const title = await this.state.contract.methods.getTitle(doc).call()
+      if(title === d) id = doc;
+    }
+    //Está en venta; se puede comprar
+    if(this.state.docsSelling.includes(d)){
+      try{
+        await this.state.contract.methods.buy(id).send({ from: this.state.account })
+        .once('receipt', (receipt) => {
+          console.log("NFT transferido correctamente")
+        })
+  
+      } catch(err){
+        this.setState({errorMessage: err.message})
+      } finally {
+          this.setState({loading:false})
+      }
+    }
+    //No está en venta; se puede vender
+    else {
+      console.log("Quiero vender")
+      this.state.contract.methods.permission(id).send({ from: this.state.account })
+    }
   }
 
   //Renderizado de la página html
@@ -248,11 +280,39 @@ class App extends Component {
 
             <hr></hr>
             <div className='mx-auto row text-center'>
+              
               {this.state.docs.map((doc, key) => {
+                var texto
+                var hid
+                var hid2 = true
+                if (this.state.docsSelling.includes(doc)) texto = this.state.docsInPropery.includes(doc) ? "Retirar" : "Comprar"
+                else if (this.state.docsInPropery.includes(doc)) {texto = "Vender"; hid2=false}
+                else hid = true                
                 return(
-                  <div key={key}> 
+                  <div 
+                    key={key}
+                    className="px-2"
+                  > 
                     <h3>{doc}</h3>
-                    <button onClick={(e) => {this.downloadfile(doc)}}> Descargar </button>
+                    <button 
+                      onClick={(e) => {
+                        this.downloadFile(doc)
+                        }}
+                      className="btn mx-auto btn-success"
+                      hidden={hid2}
+                    > 
+                      ▼ Descargar ▼
+                    </button>
+
+                    <button
+                        onClick={(e) => {
+                        this.buy(doc)
+                        }}
+                      className="btn mx-auto btn-warning"
+                      hidden={hid}
+                    >
+                      {texto}
+                    </button>
                   </div>
                 )
               })
