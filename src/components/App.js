@@ -2,8 +2,9 @@ import React, { Component } from 'react';
 import './App.css';
 import Web3 from 'web3'
 import TFG from '../abis/TFG.json'
-import Modal from './Modal';
 import ipfs from './ipfs.js'
+import pdf from '../pdf.png'
+import Modal from './Modal'
 
 class App extends Component {
   
@@ -191,6 +192,7 @@ class App extends Component {
 
   //Renderizado de la página html
   render() {
+
     return (
       <div>
         <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
@@ -250,70 +252,55 @@ class App extends Component {
                   </button>
 
                 </form>
-
-                <div className="content mr-auto ml-auto">
-                  <button  
-                    className="btn btn-block btn-info"
-                      onClick={e => {
-                      this.showModal();
-                    }}> 
-                  NFTs en propiedad
-                  </button>
-                  <div className="d-inline-flex flex-row justify-content-center">
-                  <Modal 
-                    onClose={this.showModal} 
-                    show={this.state.show}> 
-                    {this.state.docsInPropery.map((doc,key) => {
-                      return (
-                        <div key={key} className="row text-center">
-                          <div>
-                            {doc}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </Modal>
-                  </div>
-                </div>
               </div>
             </main>
 
-            <hr></hr>
             <div className='mx-auto row text-center'>
+              <h3> [ Listado de documentos disponibles ]</h3>
+            </div>
               
+            <div className='mx-auto row text-center'>
               {this.state.docs.map((doc, key) => {
                 var texto
                 var hid
                 var hid2 = true
-                if (this.state.docsSelling.includes(doc)) texto = this.state.docsInPropery.includes(doc) ? "Retirar" : "Comprar"
-                else if (this.state.docsInPropery.includes(doc)) {texto = "Vender"; hid2=false}
+                if (this.state.docsSelling.includes(doc)) texto = this.state.docsInPropery.includes(doc) ? "x Retirar x" : " $ Comprar $"
+                else if (this.state.docsInPropery.includes(doc)) {texto = "$ Vender $"; hid2=false}
                 else hid = true                
                 return(
                   <div 
                     key={key}
-                    className="px-2"
+                    className="p-2"
                   > 
-                    <h3>{doc}</h3>
+                  <img src={pdf} alt={doc} width="40" height="45"></img>
+
+
+                  <h5>{doc}</h5>
+                  
+                  <h6 hidden={hid2} className="text-primary"> [En propiedad] </h6>
+                  
+                  <div>
                     <button 
                       onClick={(e) => {
                         this.downloadFile(doc)
-                        }}
+                      }}
                       className="btn mx-auto btn-success"
-                      hidden={hid2}
-                    > 
+                      hidden={hid2}> 
                       ▼ Descargar ▼
                     </button>
+                  </div>
 
+                  <div className='p-2'>
                     <button
                         onClick={(e) => {
                         this.buy(doc)
                         }}
                       className="btn mx-auto btn-warning"
-                      hidden={hid}
-                    >
+                      hidden={hid}>
                       {texto}
                     </button>
                   </div>
+                </div>
                 )
               })
               }
