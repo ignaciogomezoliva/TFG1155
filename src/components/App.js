@@ -4,7 +4,7 @@ import Web3 from 'web3'
 import TFG from '../abis/TFG.json'
 import ipfs from './ipfs.js'
 import pdf from '../pdf.png'
-import Modal from './Modal'
+import swal from 'sweetalert'
 
 class App extends Component {
   
@@ -19,12 +19,10 @@ class App extends Component {
       docsInPropery: [],
       docsSelling: [],
       funds: 0,
-      show: false,
       errorMessage: '',
       loading: false,
       prices: [],
       ipfsHash: null,
-      transactionHash:'',
       buffer:''
     }
   }
@@ -121,7 +119,7 @@ class App extends Component {
       this.setState({buffer})
   }
 
-  async onSubmit(precio, titulo){
+  async onSubmit(precio, titulo, descripcion){
 
       await ipfs.add(this.state.buffer, (err, ipfsHash) => 
       {
@@ -129,7 +127,7 @@ class App extends Component {
         
         this.setState({ ipfsHash:ipfsHash[0].hash })
  
-        this.state.contract.methods.sendHash(this.state.ipfsHash, precio, titulo).send({
+        this.state.contract.methods.sendHash(this.state.ipfsHash, precio, titulo, descripcion).send({
           from: this.state.account
         }, (error, transactionHash) => {
           this.setState({transactionHash})
@@ -189,125 +187,158 @@ class App extends Component {
       this.state.contract.methods.permission(id).send({ from: this.state.account })
     }
   }
+  //Popups de información sobre los documentos
+  async alertBox(d) {
+    var id
+    var t
+    for (var i = 0; i<this.state.totalSupply; i++){
+      const doc = await this.state.contract.methods.docs(i).call()
+      const title = await this.state.contract.methods.getTitle(doc).call()
+      if(title === d) {
+        id = doc
+        t = title
+      }
+    }
+    console.log(id)
+    const precio = await this.state.contract.methods.getPrice(id).call()
+    const desc = await this.state.contract.methods.getDescription(id).call()
+    swal("El precio de este documento es de: " + precio + " moneda(s).");
+    swal({
+      title: t,
+      text: desc + "\n\nEl precio de este documento es de: " + precio + " moneda(s).",
+      icon: "info"
+    })
+  }
 
   //Renderizado de la página html
   render() {
 
     return (
-      <div>
-        <nav className="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-
-          <div className="text-white justify-content-center"> 
-            <button onClick={this.start} className="btn-sm btn-warning "> [+] </button>
+      <>
+      <header>
+        <div>
+          <nav className="navbar navbar-dark fixed-top bg-dark flex p-0 ">
+            <div className="text-white justify-content-center">
+              <button onClick={this.start} className="btn-sm btn-warning ">[+]</button>
               Saldo actual: {this.state.funds}
-          </div>
-
-          <ul className="navbar-nav px-3">
-            <li className="nav-item text-nowrap d-none d-sm-none d-sm-block">
-              <small className="text-white">
-                <span id="account">
-                  {this.state.account}
-                </span>   
-              </small>
-            </li>
-          </ul>
-        </nav>
-        <div className="container-fluid mt-5">
-          <div className="row">
-            <main role="main" className="col-lg-12 d-flex text-center">
-              <div className="content mr-auto ml-auto">
-
-                <h1> DApp de un coleccionable de NFT's</h1>
-                <form onSubmit={(event) => {
-                  event.preventDefault();
-                  const precio = this.precio.value
-                  const titulo =this.titulo.value
-                  this.onSubmit(precio, titulo)
-                  
-                  }}>
-
-                  <input 
-                  type = 'text'
-                  className = 'form-control mb-1'
-                  placeholder = 'Título del NFT'
-                  ref = {(input) => {this.titulo = input}}
-                  />
-
-                  <input 
-                  type = 'text'
-                  className = 'form-control mb-1'
-                  placeholder = '5 monedas'
-                  ref = {(input) => {this.precio = input}}
-                  />
-
-                  <input 
-                  type = "file"
-                  onChange = {this.captureFile}
-                  />
-
-                  <button 
-                  type="submit"
-                  className='btn btn-success'> 
-                  Nuevo NFT 
-                  </button>
-
-                </form>
-              </div>
-            </main>
-
-            <div className='mx-auto row text-center'>
-              <h3> [ Listado de documentos disponibles ]</h3>
             </div>
-              
-            <div className='mx-auto row text-center'>
-              {this.state.docs.map((doc, key) => {
-                var texto
-                var hid
-                var hid2 = true
-                if (this.state.docsSelling.includes(doc)) texto = this.state.docsInPropery.includes(doc) ? "x Retirar x" : " $ Comprar $"
-                else if (this.state.docsInPropery.includes(doc)) {texto = "$ Vender $"; hid2=false}
-                else hid = true                
-                return(
-                  <div 
-                    key={key}
-                    className="p-2"
-                  > 
-                  <img src={pdf} alt={doc} width="40" height="45"></img>
 
-
-                  <h5>{doc}</h5>
-                  
-                  <h6 hidden={hid2} className="text-primary"> [En propiedad] </h6>
-                  
-                  <div>
-                    <button 
-                      onClick={(e) => {
-                        this.downloadFile(doc)
-                      }}
-                      className="btn mx-auto btn-success"
-                      hidden={hid2}> 
-                      ▼ Descargar ▼
-                    </button>
-                  </div>
-
-                  <div className='p-2'>
-                    <button
-                        onClick={(e) => {
-                        this.buy(doc)
-                        }}
-                      className="btn mx-auto btn-warning"
-                      hidden={hid}>
-                      {texto}
-                    </button>
-                  </div>
-                </div>
-                )
-              })
-              }
-            </div>
-          </div>
+            <ul className="navbar-nav px-3">
+              <li className="nav-item text-nowrap d-none d-sm-none d-sm-block">
+                <small className="text-white">
+                  <span id="account">
+                    {this.state.account}
+                  </span>
+                </small>
+              </li>
+            </ul>
+          </nav>
         </div>
-      </div>
+
+      </header>
+      
+      <body>
+        
+        <div className="container-fluid mt-5">
+          <h1 className='text-center'>NFN: Non Fungible Notes</h1>
+          <h2 className='text-center'>Trabajo fin de grado</h2>
+          <form onSubmit={(event) => {
+            event.preventDefault();
+            const precio = this.precio.value
+            const titulo =this.titulo.value
+            const desc = this.desc.value
+            this.onSubmit(precio, titulo, desc)
+            }}>
+
+            <input 
+              type = 'text'
+              className = 'form-control mb-1'
+              placeholder = 'Título'
+              ref = {(input) => {this.titulo = input}}
+            />
+
+            <input 
+              type = 'text'
+              className = 'form-control mb-1'
+              placeholder = 'Descripción'
+              ref = {(input) => {this.desc = input}}
+            />
+
+            <input 
+              type = 'text'
+              className = 'form-control mb-1'
+              placeholder = 'Precio'
+              ref = {(input) => {this.precio = input}}
+            />
+
+            <input 
+              type = "file"
+              onChange = {this.captureFile}
+            />
+
+            <button 
+              type="submit"
+              className='btn btn-success'> 
+              Nuevo NFT 
+            </button>
+
+          </form>
+
+        </div>
+
+        <hr></hr>
+
+        <h3 className='text-center'> [ Listado de documentos disponibles ]</h3>
+
+        <div className='mx-auto row text-center'>
+          {this.state.docs.map((doc, key) => {
+            
+            var texto
+            var hid
+            var hid2 = true
+            if (this.state.docsSelling.includes(doc)) texto = this.state.docsInPropery.includes(doc) ? "x Retirar x" : " $ Comprar $"
+            else if (this.state.docsInPropery.includes(doc)) {texto = "$ Vender $"; hid2=false}
+            else hid = true                
+            return(
+              <div 
+                key={key}
+                className="p-2"> 
+         
+                <img src={pdf} alt={doc} width="40" height="45" onClick={(e) => this.alertBox(doc)}></img>
+
+                <h5>{doc}</h5>
+                
+                <h6 hidden={hid2} className="text-primary"> [En propiedad] </h6>
+                
+                <div>
+                  <button 
+                    onClick={(e) => {
+                      this.downloadFile(doc)
+                    }}
+                    className="btn mx-auto btn-success"
+                    hidden={hid2}> 
+                    ▼ Descargar ▼
+                  </button>
+                </div>
+
+                <div className='p-2'>
+                  <button
+                      onClick={(e) => {
+                      this.buy(doc)
+                      }}
+                    className="btn mx-auto btn-warning"
+                    hidden={hid}>
+                    {texto}
+                  </button>
+                </div>
+              </div>
+            )
+          })
+          }            
+        </div>
+
+      </body>
+      </>
     );
   }
 }

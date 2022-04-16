@@ -22,7 +22,7 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
     mapping (string => address) _property;
     mapping (string => string) _titles;
     mapping (string => uint) _ids;
-
+    mapping (string => string) _descriptions;
 
     string ipfsHash;
 
@@ -43,7 +43,7 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         return super.supportsInterface(interfaceId);
     }
  
-    function sendHash(string memory x, uint precio, string memory titulo) public {
+    function sendHash(string memory x, uint precio, string memory titulo, string memory description) public {
         require(!_docExists[x]);
         ipfsHash = x;
         docs.push(x);
@@ -51,6 +51,7 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         _price[x] = precio;
         _property[x] = msg.sender;
         _titles[x] = titulo;
+        _descriptions[x] = description;
         bytes memory dataColor = bytes(x);
         _mint(msg.sender, count, 1, dataColor);
         count++;
@@ -78,8 +79,24 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         return _titles[id];
     }
 
+    function setTitle(string memory id, string memory newTitle) public {
+        _titles[id] = newTitle;
+    }
+
     function getPrice(string memory id) public view returns (uint256){
         return _price[id];
+    }
+
+    function setPrice(string memory id, uint256 newPrice) public {
+        _price[id] = newPrice;
+    }
+
+    function getDescription(string memory id) public view returns (string memory) {
+        return _descriptions[id];
+    }
+
+    function setDescription(string memory id, string memory newDescription) public {
+        _descriptions[id] = newDescription;
     }
 
     function funds(address propietario) public view returns (uint256){
