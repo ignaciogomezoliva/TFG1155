@@ -200,14 +200,42 @@ class App extends Component {
         t = title
       }
     }
-    const precio = await this.state.contract.methods.getPrice(id).call()
-    const desc = await this.state.contract.methods.getDescription(id).call()
-    Swal.fire({
-      title: t,
-      text: desc,
-      footer: "El precio de este documento es de: " + precio + " moneda(s).",
-      icon: "info"
-    })
+    if (this.state.docsInPropery.includes(d)){
+      //Es tuyo; permite modificar parámetros
+      const { value: formValues } = await Swal.fire({
+        title: 'Modificar datos',
+        html:
+          '<input id="swal-input1" class="swal2-input" placeholder="Nueva descripción">' +
+          '<input id="swal-input2" class="swal2-input" placeholder="Nuevo precio">',
+        focusConfirm: false,
+        preConfirm: () => {
+          return [
+            document.getElementById('swal-input1').value,
+            document.getElementById('swal-input2').value
+          ]
+        }
+      })
+      
+      if (formValues[0]) {
+        await this.state.contract.methods.setDescription(id, formValues[0]).send({from: this.state.account})
+      }
+
+      if (formValues[1]){
+        await this.state.contract.methods.setPrice(id, formValues[1]).send({from: this.state.account})
+      }
+    }
+    else {
+      //No es tuyo; la caja arroja solamente información
+      const precio = await this.state.contract.methods.getPrice(id).call()
+      const desc = await this.state.contract.methods.getDescription(id).call()
+      Swal.fire({
+        title: t,
+        text: desc,
+        footer: "El precio de este documento es de: " + precio + " moneda(s).",
+        icon: "info"
+      })
+    }
+    
   }
 
   //Renderizado de la página html
