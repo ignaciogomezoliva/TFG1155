@@ -4,6 +4,7 @@ import Web3 from 'web3'
 import TFG from '../abis/TFG.json'
 import ipfs from './ipfs.js'
 import pdf from '../pdf.png'
+import logo from '../logo.png'
 import swal from 'sweetalert'
 
 class App extends Component {
@@ -240,8 +241,13 @@ class App extends Component {
       <body>
         
         <div className="container-fluid mt-5">
-          <h1 className='text-center'>NFN: Non Fungible Notes</h1>
-          <h2 className='text-center'>Trabajo fin de grado</h2>
+          <div className='text-center'>
+            <h1>Non Fungible Notes</h1>
+            <img src={logo} alt="NFN"></img>
+            <h2>Trabajo fin de grado</h2>
+          </div>
+
+          
           <form onSubmit={(event) => {
             event.preventDefault();
             const precio = this.precio.value
@@ -271,16 +277,21 @@ class App extends Component {
               ref = {(input) => {this.precio = input}}
             />
 
-            <input 
-              type = "file"
-              onChange = {this.captureFile}
-            />
-
-            <button 
-              type="submit"
-              className='btn btn-success'> 
-              Nuevo NFT 
-            </button>
+            <div className="d-flex flex-row justify-content-center p-1">
+              <input 
+                type = "file"
+                onChange = {this.captureFile}
+              />
+            </div>
+          
+            <div className="d-flex flex-row justify-content-center p-3">
+              <button 
+                type="submit"
+                className='btn btn-success'> 
+                Nuevo NFT 
+              </button>
+            </div>
+            
 
           </form>
 
