@@ -5,7 +5,7 @@ import TFG from '../abis/TFG.json'
 import ipfs from './ipfs.js'
 import pdf from '../pdf.png'
 import logo from '../logo.png'
-import swal from 'sweetalert'
+import Swal from 'sweetalert2'
 
 class App extends Component {
   
@@ -200,13 +200,12 @@ class App extends Component {
         t = title
       }
     }
-    console.log(id)
     const precio = await this.state.contract.methods.getPrice(id).call()
     const desc = await this.state.contract.methods.getDescription(id).call()
-    swal("El precio de este documento es de: " + precio + " moneda(s).");
-    swal({
+    Swal.fire({
       title: t,
-      text: desc + "\n\nEl precio de este documento es de: " + precio + " moneda(s).",
+      text: desc,
+      footer: "El precio de este documento es de: " + precio + " moneda(s).",
       icon: "info"
     })
   }
