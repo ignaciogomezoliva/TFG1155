@@ -75,6 +75,11 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         return _property[id];
     }
 
+    function update(string memory id, string memory newDescription, uint256 newPrice) public {
+        _descriptions[id] = newDescription;
+        _price[id] = newPrice;
+    }
+
     function getTitle(string memory id) public view returns(string memory title){
         return _titles[id];
     }

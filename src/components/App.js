@@ -216,13 +216,15 @@ class App extends Component {
         }
       })
       
-      if (formValues[0]) {
+      if (formValues[0] && formValues[1])
+        await this.state.contract.methods.update(id, formValues[0], formValues[1]).send({from: this.state.account})
+      
+      if (formValues[0]) 
         await this.state.contract.methods.setDescription(id, formValues[0]).send({from: this.state.account})
-      }
-
-      if (formValues[1]){
+      
+      if (formValues[1])
         await this.state.contract.methods.setPrice(id, formValues[1]).send({from: this.state.account})
-      }
+      
     }
     else {
       //No es tuyo; la caja arroja solamente información
