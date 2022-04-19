@@ -1,5 +1,6 @@
-import React, { Component } from 'react';
-import './App.css';
+import React, { Component } from 'react'
+import './App.css'
+import 'animate.css'
 import Web3 from 'web3'
 import TFG from '../abis/TFG.json'
 import ipfs from './ipfs.js'
@@ -204,6 +205,7 @@ class App extends Component {
       //Es tuyo; permite modificar parámetros
       const { value: formValues } = await Swal.fire({
         title: 'Modificar datos',
+        icon: "question",
         html:
           '<input id="swal-input1" class="swal2-input" placeholder="Nueva descripción">' +
           '<input id="swal-input2" class="swal2-input" placeholder="Nuevo precio">',
@@ -271,13 +273,13 @@ class App extends Component {
         
         <div className="container-fluid mt-5">
           <div className='text-center'>
-            <h1>Non Fungible Notes</h1>
-            <img src={logo} alt="NFN"></img>
-            <h2>Trabajo fin de grado</h2>
+            <h1 className='animate__animated animate__zoomIn'>Non Fungible Notes</h1>
+            <img src={logo} alt="NFN" className='animate__animated animate__heartBeat'></img>
+            <h2 className='animate__animated animate__zoomIn'>Trabajo fin de grado</h2>
           </div>
 
           
-          <form onSubmit={(event) => {
+          <form className='animate__animated animate__fadeInUp animate__delay-2s' onSubmit={(event) => {
             event.preventDefault();
             const precio = this.precio.value
             const titulo =this.titulo.value
@@ -326,9 +328,7 @@ class App extends Component {
 
         </div>
 
-        <hr></hr>
-
-        <h3 className='text-center'> [ Listado de documentos disponibles ]</h3>
+        <h3 className='text-center animate__animated animate__fadeInUp animate__delay-3s'> [ Listado de documentos disponibles ]</h3>
 
         <div className='mx-auto row text-center'>
           {this.state.docs.map((doc, key) => {
@@ -342,7 +342,7 @@ class App extends Component {
             return(
               <div 
                 key={key}
-                className="p-2"> 
+                className="p-2 animate__animated animate__fadeInRightBig animate__delay-3s"> 
          
                 <img src={pdf} alt={doc} width="40" height="45" onClick={(e) => this.alertBox(doc)}></img>
 
