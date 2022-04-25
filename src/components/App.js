@@ -155,7 +155,7 @@ class App extends Component {
     
       const link = document.createElement('a')
       link.href = fileURL
-      link.download = 'prueba'
+      link.download = d
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
