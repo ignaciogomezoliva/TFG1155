@@ -11,7 +11,6 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
     address public addressC;
     uint256 public count;
 
-    //ids para los tokens
     uint256 public constant moneda = 0;
 
     //estructuras auxiliares
@@ -52,14 +51,14 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         _property[x] = msg.sender;
         _titles[x] = titulo;
         _descriptions[x] = description;
-        bytes memory dataColor = bytes(x);
-        _mint(msg.sender, count, 1, dataColor);
+        bytes memory dataDoc = bytes(x);
+        _mint(msg.sender, count, 1, dataDoc);
         count++;
         _docExists[x] = true;
     }
 
     function getHash() public view returns (string memory x) {
-    return ipfsHash;
+        return ipfsHash;
     }
     
     modifier onlyAdmin() {
@@ -115,7 +114,6 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
 
 
     function buy(string memory id) public payable {
-        //Ahora la transacción de las monedas
         safeTransferFrom(msg.sender, _seller[id], 0, _price[id], "");
         _safeTransferFrom(_property[id], msg.sender, _ids[id], 1, "");
         _property[id] = msg.sender;
@@ -125,10 +123,6 @@ contract TFG is ERC1155, ERC1155Holder, Ownable{
         _seller[id] = _property[id];
         _property[id] = address(this);
         safeTransferFrom(msg.sender, _property[id], _ids[id], 1, "");
-    }
-
-    function updatePrice(uint newPrice, string memory id) public {
-        _price[id] = newPrice;
     }
 
 }
