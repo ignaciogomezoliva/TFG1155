@@ -9,7 +9,6 @@ import logo from '../logo.png'
 import Swal from 'sweetalert2'
 
 class App extends Component {
-  
   // Constructor
   constructor(props) {
     super(props)
@@ -90,17 +89,6 @@ class App extends Component {
     }
   }
 
-  //Control del modal de los NFTs en propiedad
-  showModal = e => {
-    this.setState({
-      show: !this.state.show
-    });
-  };
-
-  onClose = e => {
-      this.props.onClose && this.props.onClose(e);
-      };
-
   //Añadir fondos; únicamente disponible para el admin
   start = e => {
     this.state.contract.methods.addFunds().send({ from: this.state.account })
@@ -129,16 +117,18 @@ class App extends Component {
         
         this.setState({ ipfsHash:ipfsHash[0].hash })
  
-        this.state.contract.methods.sendHash(this.state.ipfsHash, precio, titulo, descripcion).send({
-          from: this.state.account
-        }, (error, transactionHash) => {
-          this.setState({transactionHash})
-          this.setState({
-            docs: [...this.state.docs, titulo]
-          })
+        this.state.contract.methods
+          .sendHash(this.state.ipfsHash, precio, titulo, descripcion)
+          .send({
+            from: this.state.account
+            }, (error, transactionHash) => {
+              this.setState({transactionHash})
+              this.setState({
+                docs: [...this.state.docs, titulo]
+              })
+            }) 
         }) 
-      }) 
-    } 
+      } 
 
   async  downloadFile(d) {
     var id
@@ -191,6 +181,7 @@ class App extends Component {
   }
   //Popups de información sobre los documentos
   async alertBox(d) {
+
     var id
     var t
     for (var i = 0; i<this.state.totalSupply; i++){
@@ -201,12 +192,16 @@ class App extends Component {
         t = title
       }
     }
+    const precio = await this.state.contract.methods.getPrice(id).call()
+    const desc = await this.state.contract.methods.getDescription(id).call()
     if (this.state.docsInPropery.includes(d)){
       //Es tuyo; permite modificar parámetros
       const { value: formValues } = await Swal.fire({
         title: 'Modificar datos',
         icon: "question",
         html:
+          '<u> Descripción:</u> ' + desc + '<br>' + 
+          '<u> Precio:</u> ' + precio + " moneda(s)"+ '<br>' +
           '<input id="swal-input1" class="swal2-input" placeholder="Nueva descripción">' +
           '<input id="swal-input2" class="swal2-input" placeholder="Nuevo precio">',
         focusConfirm: false,
@@ -217,8 +212,8 @@ class App extends Component {
           ]
         }
       })
-      
-      if (formValues[0] && formValues[1])
+      try{
+        if (formValues[0] && formValues[1])
         await this.state.contract.methods.update(id, formValues[0], formValues[1]).send({from: this.state.account})
       
       if (formValues[0]) 
@@ -227,11 +222,13 @@ class App extends Component {
       if (formValues[1])
         await this.state.contract.methods.setPrice(id, formValues[1]).send({from: this.state.account})
       
+      }catch(err){
+        console.log(err)
+      }
+      
     }
     else {
       //No es tuyo; la caja arroja solamente información
-      const precio = await this.state.contract.methods.getPrice(id).call()
-      const desc = await this.state.contract.methods.getDescription(id).call()
       Swal.fire({
         title: t,
         text: desc,
