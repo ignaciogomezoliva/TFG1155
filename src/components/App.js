@@ -59,11 +59,17 @@ class App extends Component {
       const address = networkData.address
       const contract = new web3.eth.Contract(abi, address)
       const addressC = await contract.methods.addressC.call()
+
       console.log("La dirección del cotrato es: " + addressC)
+
       this.setState({contract})
+
       // Función 'totalSupply' del Smart Contract
+      // Revisar para qué es necesario esto
       const totalSupply = await contract.methods.totalSupply().call()
       this.setState({totalSupply})
+
+      //Fondos de la cartera
       const f = await contract.methods.funds(this.state.account).call()
       this.setState({funds: f.toNumber()})
       // Carga de documentos
