@@ -1,0 +1,4 @@
+{
+    "solidity.defaultCompiler": "localNodeModule",
+    "solidity.compileUsingLocalVersion": "c:\\Users\\ignac\\Desktop\\TFG\\TFG1155\\soljson-v0.8.20+commit.a1b79de6.js"
+}
