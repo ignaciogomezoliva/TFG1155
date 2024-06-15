@@ -12,7 +12,9 @@ contract RoyaltyNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable, ERC2
 
     Counters.Counter private _tokenIdCounter;
 
-    constructor() ERC721("Non Fungible Notes", "NFN") {}
+    constructor() ERC721("Non Fungible Notes", "NFN") {
+        _setDefaultRoyalty(msg.sender, 100);
+    }
 
     function safeMint(address to, string memory uri) public onlyOwner {
         uint256 tokenId = _tokenIdCounter.current();
@@ -42,6 +44,12 @@ contract RoyaltyNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable, ERC2
 
     function _burn(uint256 tokenId) internal override(ERC721, ERC721URIStorage) {
         super._burn(tokenId);
+        _resetTokenRoyalty(tokenId);
+    }
+
+    function burnNFT(uint256 tokenId)
+        public onlyOwner {
+        _burn(tokenId);
     }
 
     function tokenURI(uint256 tokenId)
