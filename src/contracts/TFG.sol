@@ -21,6 +21,16 @@ contract RoyaltyNFT is ERC721, ERC721Enumerable, ERC721URIStorage, Ownable, ERC2
         _setTokenURI(tokenId, uri);
     }
 
+    function mintWithRoyalty(address recipient, string memory uri, address royaltFeeReceiver, uint96 fee) public returns(uint256){
+        uint256 tokenId = _tokenIdCounter.current();
+        _tokenIdCounter.increment();
+        _safeMint(recipient, tokenId);
+        _setTokenURI(tokenId, uri);
+        _setTokenRoyalty(tokenId, royaltFeeReceiver, fee);
+
+        return tokenId;
+    }
+
     // The following functions are overrides required by Solidity.
 
     function _beforeTokenTransfer(address from, address to, uint256 tokenId)
